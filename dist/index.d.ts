@@ -11,6 +11,6 @@ declare class AtomStore<State extends {}, ActionType extends string, Payload ext
     unsubscribe(id: string): void;
     getState(): State;
 }
-declare const useAtomStoreSelector: <Store extends AtomStore<{}, string, Partial<{}>>, State extends ReturnType<Store["getState"]>>(store: Store, selector: (state: State) => State[keyof State]) => State[keyof State];
+declare const useAtomStoreSelector: <Store extends AtomStore<{}, string, Partial<{}>>, State extends ReturnType<Store["getState"]>>(store: Store, selector: (state: State) => State[keyof State], shouldUpdate?: ((pv: State[keyof State], cv: State[keyof State]) => boolean) | undefined) => State[keyof State];
 export { AtomStore, useAtomStoreSelector };
 export type { Action, Reducer };

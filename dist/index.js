@@ -49,11 +49,18 @@ class AtomStore {
 }
 exports.AtomStore = AtomStore;
 _AtomStore_state = new WeakMap(), _AtomStore_reducer = new WeakMap(), _AtomStore_pubId = new WeakMap();
-const useAtomStoreSelector = (store, selector) => {
+const useAtomStoreSelector = (store, selector, shouldUpdate) => {
     const [value, setValue] = (0, react_1.useState)(() => selector(store.getState()));
+    const preVal = (0, react_1.useRef)(value);
     (0, react_1.useEffect)(() => {
         const id = store.subscribe(() => {
-            setValue(() => selector(store.getState()));
+            const currentVal = selector(store.getState());
+            if (shouldUpdate !== undefined) {
+                if (shouldUpdate(preVal.current, currentVal) === false) {
+                    return;
+                }
+            }
+            setValue(() => currentVal);
         });
         return () => {
             store.unsubscribe(id);

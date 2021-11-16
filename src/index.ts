@@ -1,5 +1,5 @@
 import { pubsub } from "atom-pubsub";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Deepclone from "rfdc";
 import { nanoid } from "nanoid";
 
@@ -56,15 +56,24 @@ const useAtomStoreSelector = <
   State extends ReturnType<Store["getState"]>
 >(
   store: Store,
-  selector: (state: State) => State[keyof State]
+  selector: (state: State) => State[keyof State],
+  shouldUpdate?: (pv: State[keyof State], cv: State[keyof State]) => boolean
 ) => {
   // @ts-ignore
   const [value, setValue] = useState(() => selector(store.getState()));
+  const preVal = useRef(value);
 
   useEffect(() => {
     const id = store.subscribe(() => {
       //@ts-ignore
-      setValue(() => selector(store.getState()));
+      const currentVal = selector(store.getState());
+      if (shouldUpdate !== undefined) {
+        if (shouldUpdate(preVal.current, currentVal) === false) {
+          return;
+        }
+      }
+      //@ts-ignore
+      setValue(() => currentVal);
     });
 
     return () => {
