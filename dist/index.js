@@ -15,7 +15,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 var _AtomStore_state, _AtomStore_reducer, _AtomStore_pubId;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.useAtomStoreSelector = exports.AtomStore = void 0;
+exports.useLazyRef = exports.useAtomStoreSelector = exports.AtomStore = void 0;
 const atom_pubsub_1 = require("atom-pubsub");
 const react_1 = require("react");
 const rfdc_1 = __importDefault(require("rfdc"));
@@ -56,6 +56,7 @@ const useLazyRef = (lazyInit) => {
     }
     return ref;
 };
+exports.useLazyRef = useLazyRef;
 const useAtomStoreSelector = (store, selector, shouldUpdate) => {
     const [value, setValue] = (0, react_1.useState)(() => selector(store.getState()));
     const preVal = useLazyRef(() => selector(store.getState()));

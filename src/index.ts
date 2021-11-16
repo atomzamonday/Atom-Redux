@@ -94,5 +94,5 @@ const useAtomStoreSelector = <
   return value;
 };
 
-export { AtomStore, useAtomStoreSelector };
+export { AtomStore, useAtomStoreSelector, useLazyRef };
 export type { Action, Reducer };
