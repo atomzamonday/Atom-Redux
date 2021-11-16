@@ -49,9 +49,16 @@ class AtomStore {
 }
 exports.AtomStore = AtomStore;
 _AtomStore_state = new WeakMap(), _AtomStore_reducer = new WeakMap(), _AtomStore_pubId = new WeakMap();
+const useLazyRef = (lazyInit) => {
+    const ref = (0, react_1.useRef)();
+    if (ref.current === undefined) {
+        ref.current = lazyInit();
+    }
+    return ref;
+};
 const useAtomStoreSelector = (store, selector, shouldUpdate) => {
     const [value, setValue] = (0, react_1.useState)(() => selector(store.getState()));
-    const preVal = (0, react_1.useRef)(value);
+    const preVal = useLazyRef(() => selector(store.getState()));
     (0, react_1.useEffect)(() => {
         const id = store.subscribe(() => {
             const currentVal = selector(store.getState());
@@ -60,6 +67,7 @@ const useAtomStoreSelector = (store, selector, shouldUpdate) => {
                     return;
                 }
             }
+            preVal.current = currentVal;
             setValue(() => currentVal);
         });
         return () => {

@@ -51,6 +51,14 @@ class AtomStore<
   }
 }
 
+const useLazyRef = <T>(lazyInit: () => T) => {
+  const ref = useRef<T>();
+  if (ref.current === undefined) {
+    ref.current = lazyInit();
+  }
+  return ref as React.MutableRefObject<T>;
+};
+
 const useAtomStoreSelector = <
   Store extends AtomStore<{}, string, Partial<{}>>,
   State extends ReturnType<Store["getState"]>
@@ -61,7 +69,8 @@ const useAtomStoreSelector = <
 ) => {
   // @ts-ignore
   const [value, setValue] = useState(() => selector(store.getState()));
-  const preVal = useRef(value);
+  // @ts-ignore
+  const preVal = useLazyRef(() => selector(store.getState()));
 
   useEffect(() => {
     const id = store.subscribe(() => {
@@ -72,6 +81,7 @@ const useAtomStoreSelector = <
           return;
         }
       }
+      preVal.current = currentVal;
       //@ts-ignore
       setValue(() => currentVal);
     });
