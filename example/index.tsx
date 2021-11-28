@@ -1,21 +1,26 @@
 import { createAtomStore, useAtomStoreSelector } from "../dist/index";
 
-const sampleStoreData = {
+type SampleData = {
+  username: string;
+  password: string;
+  age: number;
+};
+
+const sampleStoreData: SampleData = {
   username: "",
   password: "",
   age: 99,
 };
 
-const store = createAtomStore<
-  typeof sampleStoreData,
-  "update",
-  Partial<typeof sampleStoreData>
->(sampleStoreData, (state, { type, payload }) => {
-  if (type === "update") {
-    return { ...state, ...payload };
+const store = createAtomStore<SampleData, "update", Partial<SampleData>>(
+  sampleStoreData,
+  (state, { type, payload }) => {
+    if (type === "update") {
+      return { ...state, ...payload };
+    }
+    return state;
   }
-  return state;
-});
+);
 
 const Input: React.FC = () => {
   const value = useAtomStoreSelector(store, (state) => state.password);

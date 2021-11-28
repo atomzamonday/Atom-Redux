@@ -1,21 +1,27 @@
 ```tsx
 import { AtomStore, useAtomStoreSelector } from "atom-redux";
 
-const sampleStoreData = {
-  username: "",
-  password: "",
+type SampleData = {
+  username: string;
+  password: string;
+  age: number;
 };
 
-const store = new AtomStore<
-  typeof sampleStoreData,
-  "update",
-  Partial<typeof sampleStoreData>
->(sampleStoreData, (state, { type, payload }) => {
-  if (type === "update") {
-    return { ...state, ...payload };
+const sampleStoreData: SampleData = {
+  username: "",
+  password: "",
+  age: 99,
+};
+
+const store = createAtomStore<SampleData, "update", Partial<SampleData>>(
+  sampleStoreData,
+  (state, { type, payload }) => {
+    if (type === "update") {
+      return { ...state, ...payload };
+    }
+    return state;
   }
-  return state;
-});
+);
 
 const Input: React.FC = () => {
   const value = useAtomStoreSelector(store, (state) => state.username);
