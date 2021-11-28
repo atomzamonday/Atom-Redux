@@ -18,38 +18,89 @@ type Reducer<
   Payload extends Partial<State>
 > = (state: State, action: Action<ActionType, Payload>) => State;
 
-class AtomStore<
+const AtomStoreClass = (() => {
+  type PrivateState<T extends {}> = {
+    state: T;
+    reducer: Reducer<T, string, Partial<T>>;
+    pubId: string;
+  };
+
+  const __private__: {
+    [id: string]: PrivateState<{}>;
+  } = {};
+
+  class AtomStore<
+    State extends {},
+    ActionType extends string,
+    Payload extends Partial<State>
+  > {
+    private id: string;
+
+    constructor(
+      initState: State,
+      reducer: Reducer<State, ActionType, Payload>
+    ) {
+      this.id = nanoid();
+      __private__[this.id] = {
+        state: initState,
+        reducer: reducer as unknown as Reducer<{}, string, Partial<{}>>,
+        pubId: nanoid(),
+      };
+    }
+
+    dispatch(action: Action<ActionType, Payload>) {
+      const { state, reducer, pubId } = __private__[
+        this.id
+      ] as unknown as PrivateState<State>;
+      (__private__[this.id] as unknown as PrivateState<State>).state = reducer(
+        state,
+        action
+      );
+      pubsub.publish(pubId);
+    }
+
+    subscribe(callback: () => any) {
+      const { pubId } = __private__[this.id] as unknown as PrivateState<State>;
+      return pubsub.subscribe(pubId, callback);
+    }
+
+    unsubscribe(id: string) {
+      pubsub.unsubscribe(id);
+    }
+
+    getState() {
+      return Object.freeze(
+        deepclone(
+          (__private__[this.id] as unknown as PrivateState<State>).state
+        )
+      );
+    }
+  }
+
+  return AtomStore;
+})();
+
+type AtomStore<
   State extends {},
   ActionType extends string,
   Payload extends Partial<State>
-> {
-  #state: State;
-  #reducer: Reducer<State, ActionType, Payload>;
-  #pubId: string;
+> = {
+  dispatch(action: Action<ActionType, Payload>): void;
+  subscribe(callback: () => any): string;
+  unsubscribe(id: string): void;
+  getState(): State;
+};
 
-  constructor(initState: State, reducer: Reducer<State, ActionType, Payload>) {
-    this.#state = initState;
-    this.#reducer = reducer;
-    this.#pubId = nanoid();
-  }
-
-  dispatch(action: Action<ActionType, Payload>) {
-    this.#state = this.#reducer(this.#state, action);
-    pubsub.publish(this.#pubId);
-  }
-
-  subscribe(callback: () => any) {
-    return pubsub.subscribe(this.#pubId, callback);
-  }
-
-  unsubscribe(id: string) {
-    pubsub.unsubscribe(id);
-  }
-
-  getState() {
-    return deepclone(this.#state);
-  }
-}
+const createAtomStore = <
+  State extends {},
+  ActionType extends string,
+  Payload extends Partial<State>
+>(
+  initState: State,
+  reducer: Reducer<State, ActionType, Payload>
+): AtomStore<State, ActionType, Payload> => {
+  return new AtomStoreClass(initState, reducer);
+};
 
 const useLazyRef = <T>(lazyInit: () => T) => {
   const ref = useRef<T>();
@@ -60,29 +111,32 @@ const useLazyRef = <T>(lazyInit: () => T) => {
 };
 
 const useAtomStoreSelector = <
+  Selected extends unknown,
   Store extends AtomStore<{}, string, Partial<{}>>,
   State extends ReturnType<Store["getState"]>
+  // Store extends AtomStore<{}, string, Partial<{}>>,
+  // State extends ReturnType<Store["getState"]>
 >(
   store: Store,
-  selector: (state: State) => State[keyof State],
-  shouldUpdate?: (pv: State[keyof State], cv: State[keyof State]) => boolean
+  selector: (state: State) => Selected,
+  shouldUpdate?: (pv: Selected, cv: Selected) => boolean
 ) => {
-  // @ts-ignore
-  const [value, setValue] = useState(() => selector(store.getState()));
-  // @ts-ignore
-  const preVal = useLazyRef(() => selector(store.getState()));
+  const [value, setValue] = useState(() =>
+    selector(store.getState() as unknown as State)
+  );
+  const preVal = useLazyRef(() =>
+    selector(store.getState() as unknown as State)
+  );
 
   useEffect(() => {
     const id = store.subscribe(() => {
-      //@ts-ignore
-      const currentVal = selector(store.getState());
+      const currentVal = selector(store.getState() as unknown as State);
       if (shouldUpdate !== undefined) {
         if (shouldUpdate(preVal.current, currentVal) === false) {
           return;
         }
       }
       preVal.current = currentVal;
-      //@ts-ignore
       setValue(() => currentVal);
     });
 
@@ -94,5 +148,5 @@ const useAtomStoreSelector = <
   return value;
 };
 
-export { AtomStore, useAtomStoreSelector, useLazyRef };
-export type { Action, Reducer };
+export { createAtomStore, useAtomStoreSelector, useLazyRef };
+export type { Action, Reducer, AtomStore };

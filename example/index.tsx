@@ -1,11 +1,12 @@
-import { AtomStore, useAtomStoreSelector } from "../dist/index";
+import { createAtomStore, useAtomStoreSelector } from "../dist/index";
 
 const sampleStoreData = {
   username: "",
   password: "",
+  age: 99,
 };
 
-const store = new AtomStore<
+const store = createAtomStore<
   typeof sampleStoreData,
   "update",
   Partial<typeof sampleStoreData>
@@ -17,7 +18,7 @@ const store = new AtomStore<
 });
 
 const Input: React.FC = () => {
-  const value = useAtomStoreSelector(store, (state) => state.username);
+  const value = useAtomStoreSelector(store, (state) => state.password);
 
   return (
     <input
