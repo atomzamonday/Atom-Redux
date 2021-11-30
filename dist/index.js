@@ -12,27 +12,24 @@ const deepclone = (0, rfdc_1.default)({
     proto: true,
     circles: false,
 });
-const __state = Symbol();
-const __reducer = Symbol();
-const __pubid = Symbol();
 class AtomStore {
     constructor(initState, reducer) {
-        this[__state] = initState;
-        this[__reducer] = reducer;
-        this[__pubid] = (0, nanoid_1.nanoid)();
+        this.__state = initState;
+        this.__reducer = reducer;
+        this.__pubid = (0, nanoid_1.nanoid)();
     }
     dispatch(action) {
-        this[__state] = this[__reducer](this[__state], action);
-        atom_pubsub_1.pubsub.publish(this[__pubid]);
+        this.__state = this.__reducer(this.__state, action);
+        atom_pubsub_1.pubsub.publish(this.__pubid);
     }
     subscribe(callback) {
-        return atom_pubsub_1.pubsub.subscribe(this[__pubid], callback);
+        return atom_pubsub_1.pubsub.subscribe(this.__pubid, callback);
     }
     unsubscribe(id) {
         atom_pubsub_1.pubsub.unsubscribe(id);
     }
     getState() {
-        return Object.freeze(deepclone(this[__state]));
+        return Object.freeze(deepclone(this.__state));
     }
 }
 const createAtomStore = (initState, reducer) => {

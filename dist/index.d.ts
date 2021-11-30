@@ -3,13 +3,10 @@ declare type Action<Type extends string, Payload extends {}> = {
     payload: Payload;
 };
 declare type Reducer<State extends {}, ActionType extends string, Payload extends Partial<State>> = (state: State, action: Action<ActionType, Payload>) => State;
-declare const __state: unique symbol;
-declare const __reducer: unique symbol;
-declare const __pubid: unique symbol;
 declare class AtomStore<State extends {}, ActionType extends string, Payload extends Partial<State>> {
-    private [__state];
-    private [__reducer];
-    private [__pubid];
+    private __state;
+    private __reducer;
+    private __pubid;
     constructor(initState: State, reducer: Reducer<State, ActionType, Payload>);
     dispatch(action: Action<ActionType, Payload>): void;
     subscribe(callback: () => any): string;

@@ -18,32 +18,28 @@ type Reducer<
   Payload extends Partial<State>
 > = (state: State, action: Action<ActionType, Payload>) => State;
 
-const __state = Symbol();
-const __reducer = Symbol();
-const __pubid = Symbol();
-
 class AtomStore<
   State extends {},
   ActionType extends string,
   Payload extends Partial<State>
 > {
-  private [__state]: State;
-  private [__reducer]: Reducer<State, ActionType, Payload>;
-  private [__pubid]: string;
+  private __state: State;
+  private __reducer: Reducer<State, ActionType, Payload>;
+  private __pubid: string;
 
   constructor(initState: State, reducer: Reducer<State, ActionType, Payload>) {
-    this[__state] = initState;
-    this[__reducer] = reducer;
-    this[__pubid] = nanoid();
+    this.__state = initState;
+    this.__reducer = reducer;
+    this.__pubid = nanoid();
   }
 
   dispatch(action: Action<ActionType, Payload>) {
-    this[__state] = this[__reducer](this[__state], action);
-    pubsub.publish(this[__pubid]);
+    this.__state = this.__reducer(this.__state, action);
+    pubsub.publish(this.__pubid);
   }
 
   subscribe(callback: () => any) {
-    return pubsub.subscribe(this[__pubid], callback);
+    return pubsub.subscribe(this.__pubid, callback);
   }
 
   unsubscribe(id: string) {
@@ -51,7 +47,7 @@ class AtomStore<
   }
 
   getState() {
-    return Object.freeze(deepclone(this[__state]));
+    return Object.freeze(deepclone(this.__state));
   }
 }
 
