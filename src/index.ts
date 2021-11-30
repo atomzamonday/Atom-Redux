@@ -70,12 +70,13 @@ const useLazyRef = <T>(lazyInit: () => T) => {
   return ref as React.MutableRefObject<T>;
 };
 
+const shallowShouldUpdate = <State extends unknown>(pv: State, cv: State) =>
+  pv !== cv;
+
 const useAtomStoreSelector = <
   Selected extends unknown,
   Store extends AtomStore<{}, string, Partial<{}>>,
   State extends ReturnType<Store["getState"]>
-  // Store extends AtomStore<{}, string, Partial<{}>>,
-  // State extends ReturnType<Store["getState"]>
 >(
   store: Store,
   selector: (state: State) => Selected,
@@ -89,12 +90,10 @@ const useAtomStoreSelector = <
   );
 
   useEffect(() => {
+    const __shouldUpdate = shouldUpdate || shallowShouldUpdate;
     const id = store.subscribe(() => {
       const currentVal = selector(store.getState() as unknown as State);
-      if (
-        shouldUpdate !== undefined &&
-        shouldUpdate(preVal.current, currentVal) === false
-      ) {
+      if (__shouldUpdate(preVal.current, currentVal) === false) {
         return;
       }
       preVal.current = currentVal;
