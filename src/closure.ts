@@ -18,42 +18,78 @@ type Reducer<
   Payload extends Partial<State>
 > = (state: State, action: Action<ActionType, Payload>) => State;
 
-const __state = Symbol();
-const __reducer = Symbol();
-const __pubid = Symbol();
+const AtomStoreClass = (() => {
+  type PrivateState<T extends {}> = {
+    state: T;
+    reducer: Reducer<T, string, Partial<T>>;
+    pubId: string;
+  };
 
-class AtomStore<
+  const __private__: {
+    [id: string]: PrivateState<{}>;
+  } = {};
+
+  class AtomStore<
+    State extends {},
+    ActionType extends string,
+    Payload extends Partial<State>
+  > {
+    private id: string;
+
+    constructor(
+      initState: State,
+      reducer: Reducer<State, ActionType, Payload>
+    ) {
+      this.id = nanoid();
+      __private__[this.id] = {
+        state: initState,
+        reducer: reducer as unknown as Reducer<{}, string, Partial<{}>>,
+        pubId: nanoid(),
+      };
+    }
+
+    dispatch(action: Action<ActionType, Payload>) {
+      const { state, reducer, pubId } = __private__[
+        this.id
+      ] as unknown as PrivateState<State>;
+      (__private__[this.id] as unknown as PrivateState<State>).state = reducer(
+        state,
+        action
+      );
+      pubsub.publish(pubId);
+    }
+
+    subscribe(callback: () => any) {
+      const { pubId } = __private__[this.id] as unknown as PrivateState<State>;
+      return pubsub.subscribe(pubId, callback);
+    }
+
+    unsubscribe(id: string) {
+      pubsub.unsubscribe(id);
+    }
+
+    getState() {
+      return Object.freeze(
+        deepclone(
+          (__private__[this.id] as unknown as PrivateState<State>).state
+        )
+      );
+    }
+  }
+
+  return AtomStore;
+})();
+
+type AtomStore<
   State extends {},
   ActionType extends string,
   Payload extends Partial<State>
-> {
-  private [__state]: State;
-  private [__reducer]: Reducer<State, ActionType, Payload>;
-  private [__pubid]: string;
-
-  constructor(initState: State, reducer: Reducer<State, ActionType, Payload>) {
-    this[__state] = initState;
-    this[__reducer] = reducer;
-    this[__pubid] = nanoid();
-  }
-
-  dispatch(action: Action<ActionType, Payload>) {
-    this[__state] = this[__reducer](this[__state], action);
-    pubsub.publish(this[__pubid]);
-  }
-
-  subscribe(callback: () => any) {
-    return pubsub.subscribe(this[__pubid], callback);
-  }
-
-  unsubscribe(id: string) {
-    pubsub.unsubscribe(id);
-  }
-
-  getState() {
-    return Object.freeze(deepclone(this[__state]));
-  }
-}
+> = {
+  dispatch(action: Action<ActionType, Payload>): void;
+  subscribe(callback: () => any): string;
+  unsubscribe(id: string): void;
+  getState(): State;
+};
 
 const createAtomStore = <
   State extends {},
@@ -63,7 +99,7 @@ const createAtomStore = <
   initState: State,
   reducer: Reducer<State, ActionType, Payload>
 ): AtomStore<State, ActionType, Payload> => {
-  return new AtomStore(initState, reducer);
+  return new AtomStoreClass(initState, reducer);
 };
 
 const useLazyRef = <T>(lazyInit: () => T) => {
@@ -114,4 +150,4 @@ const useAtomStoreSelector = <
 };
 
 export { createAtomStore, useAtomStoreSelector, useLazyRef };
-export type { Action, Reducer };
+export type { Action, Reducer, AtomStore };

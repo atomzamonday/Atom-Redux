@@ -1,7 +1,7 @@
 {
   "name": "atom-redux",
-  "version": "1.0.7",
-  "description": "Mini redux for react app",
+  "version": "1.0.8",
+  "description": "atom (mini redux) for react app",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "repository": "https://github.com/atomzamonday/Atom-Redux.git",

@@ -12,37 +12,31 @@ const deepclone = (0, rfdc_1.default)({
     proto: true,
     circles: false,
 });
-const AtomStoreClass = (() => {
-    const __private__ = {};
-    class AtomStore {
-        constructor(initState, reducer) {
-            this.id = (0, nanoid_1.nanoid)();
-            __private__[this.id] = {
-                state: initState,
-                reducer: reducer,
-                pubId: (0, nanoid_1.nanoid)(),
-            };
-        }
-        dispatch(action) {
-            const { state, reducer, pubId } = __private__[this.id];
-            __private__[this.id].state = reducer(state, action);
-            atom_pubsub_1.pubsub.publish(pubId);
-        }
-        subscribe(callback) {
-            const { pubId } = __private__[this.id];
-            return atom_pubsub_1.pubsub.subscribe(pubId, callback);
-        }
-        unsubscribe(id) {
-            atom_pubsub_1.pubsub.unsubscribe(id);
-        }
-        getState() {
-            return Object.freeze(deepclone(__private__[this.id].state));
-        }
+const __state = Symbol();
+const __reducer = Symbol();
+const __pubid = Symbol();
+class AtomStore {
+    constructor(initState, reducer) {
+        this[__state] = initState;
+        this[__reducer] = reducer;
+        this[__pubid] = (0, nanoid_1.nanoid)();
     }
-    return AtomStore;
-})();
+    dispatch(action) {
+        this[__state] = this[__reducer](this[__state], action);
+        atom_pubsub_1.pubsub.publish(this[__pubid]);
+    }
+    subscribe(callback) {
+        return atom_pubsub_1.pubsub.subscribe(this[__pubid], callback);
+    }
+    unsubscribe(id) {
+        atom_pubsub_1.pubsub.unsubscribe(id);
+    }
+    getState() {
+        return Object.freeze(deepclone(this[__state]));
+    }
+}
 const createAtomStore = (initState, reducer) => {
-    return new AtomStoreClass(initState, reducer);
+    return new AtomStore(initState, reducer);
 };
 exports.createAtomStore = createAtomStore;
 const useLazyRef = (lazyInit) => {
@@ -59,10 +53,9 @@ const useAtomStoreSelector = (store, selector, shouldUpdate) => {
     (0, react_1.useEffect)(() => {
         const id = store.subscribe(() => {
             const currentVal = selector(store.getState());
-            if (shouldUpdate !== undefined) {
-                if (shouldUpdate(preVal.current, currentVal) === false) {
-                    return;
-                }
+            if (shouldUpdate !== undefined &&
+                shouldUpdate(preVal.current, currentVal) === false) {
+                return;
             }
             preVal.current = currentVal;
             setValue(() => currentVal);
