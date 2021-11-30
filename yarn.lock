@@ -194,12 +194,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"atom-pubsub@npm:1.0.3":
-  version: 1.0.3
-  resolution: "atom-pubsub@npm:1.0.3"
+"atom-pubsub@npm:1.0.4":
+  version: 1.0.4
+  resolution: "atom-pubsub@npm:1.0.4"
   dependencies:
     nanoid: ^3.1.30
-  checksum: ed7d989bffe06d029d06751fb1c083c82b95a51be27d365de4f2ddf678c81914c8935c1dbe0eede6a8f69a37dfbe8da6bd56ebcfa8749806a60f4fb9bd45242a
+  checksum: 69a274a5dda09921f15e5956313f1e63c0942b8bc4ce7fbd23da3a622424e73a8e690158b536743e1374721c0f9a3cc83f6303090ba0751fbeb7892a03d20c8f
   languageName: node
   linkType: hard
 
@@ -208,7 +208,7 @@ __metadata:
   resolution: "atom-redux@workspace:."
   dependencies:
     "@types/react": ^17.0.35
-    atom-pubsub: 1.0.3
+    atom-pubsub: 1.0.4
     nanoid: ^3.1.30
     nodemon: ^2.0.15
     react: ^17.0.2
