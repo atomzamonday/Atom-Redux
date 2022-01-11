@@ -124,16 +124,20 @@ const useAtomStoreSelector = <
 };
 
 const createUseAtomSelector = <
-  Selected extends unknown,
-  Store extends AtomStore<{}, string, Partial<{}>>,
-  State extends ReturnType<Store["getState"]>
+  // Selected extends unknown,
+  Store extends AtomStore<{}, string, Partial<{}>>
+  // State extends ReturnType<Store["getState"]>
 >(
   store: Store
 ) => {
-  return (
+  return <
+    Selected extends unknown,
+    State extends ReturnType<Store["getState"]>
+  >(
     selector: (state: State) => Selected,
     shouldUpdate?: (pv: Selected, cv: Selected) => boolean
-  ) => useAtomStoreSelector(store, selector, shouldUpdate);
+  ) =>
+    useAtomStoreSelector<Selected, Store, State>(store, selector, shouldUpdate);
 };
 
 export {
