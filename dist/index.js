@@ -4,7 +4,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.useLazyRef = exports.useAtomStoreSelector = exports.createAtomStore = void 0;
-const atom_pubsub_1 = require("atom-pubsub");
 const react_1 = require("react");
 const rfdc_1 = __importDefault(require("rfdc"));
 const nanoid_1 = require("nanoid");
@@ -14,19 +13,29 @@ const deepclone = (0, rfdc_1.default)({
 });
 class AtomStore {
     constructor(initState, reducer) {
+        this.__listenerIds = [];
+        this.__listeners = {};
         this.__state = initState;
         this.__reducer = reducer;
-        this.__pubid = (0, nanoid_1.nanoid)();
     }
     dispatch(action) {
         this.__state = this.__reducer(this.__state, action);
-        atom_pubsub_1.pubsub.publish(this.__pubid);
+        this.__listenerIds.forEach((id) => {
+            const listener = this.__listeners[id];
+            if (listener !== undefined) {
+                listener(this.getState());
+            }
+        });
     }
-    subscribe(callback) {
-        return atom_pubsub_1.pubsub.subscribe(this.__pubid, callback);
+    subscribe(lisenerCallback) {
+        const id = (0, nanoid_1.nanoid)();
+        this.__listenerIds.push(id);
+        this.__listeners[id] = lisenerCallback;
+        return id;
     }
     unsubscribe(id) {
-        atom_pubsub_1.pubsub.unsubscribe(id);
+        this.__listenerIds = this.__listenerIds.filter((listenerId) => id !== listenerId);
+        this.__listeners[id] = null;
     }
     getState() {
         return Object.freeze(deepclone(this.__state));

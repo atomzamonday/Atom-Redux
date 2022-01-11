@@ -1,6 +1,6 @@
 {
   "name": "atom-redux",
-  "version": "1.0.12",
+  "version": "1.0.17",
   "description": "atom (mini redux) for react app",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -17,7 +17,6 @@
     "test": "node ./example/index.js"
   },
   "dependencies": {
-    "atom-pubsub": "1.0.4",
     "nanoid": "^3.1.30",
     "react": "^17.0.2",
     "rfdc": "^1.3.0"

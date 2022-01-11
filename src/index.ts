@@ -1,4 +1,3 @@
-import { pubsub } from "atom-pubsub";
 import { useState, useEffect, useRef } from "react";
 import Deepclone from "rfdc";
 import { nanoid } from "nanoid";
@@ -12,6 +11,7 @@ type Action<Type extends string, Payload extends {}> = {
   type: Type;
   payload: Payload;
 };
+
 type Reducer<
   State extends {},
   ActionType extends string,
@@ -25,25 +25,40 @@ class AtomStore<
 > {
   private __state: State;
   private __reducer: Reducer<State, ActionType, Payload>;
-  private __pubid: string;
+  // private __pubid: string;
+  private __listenerIds: string[] = [];
+  private __listeners: {
+    [id: string]: (state: State) => void;
+  } = {};
 
   constructor(initState: State, reducer: Reducer<State, ActionType, Payload>) {
     this.__state = initState;
     this.__reducer = reducer;
-    this.__pubid = nanoid();
+    // this.__pubid = nanoid();
   }
 
   dispatch(action: Action<ActionType, Payload>) {
     this.__state = this.__reducer(this.__state, action);
-    pubsub.publish(this.__pubid);
+    this.__listenerIds.forEach((id) => {
+      const listener = this.__listeners[id];
+      if (listener !== undefined) {
+        listener(this.getState());
+      }
+    });
   }
 
-  subscribe(callback: () => any) {
-    return pubsub.subscribe(this.__pubid, callback);
+  subscribe(lisenerCallback: (state: State) => any) {
+    const id = nanoid();
+    this.__listenerIds.push(id);
+    this.__listeners[id] = lisenerCallback;
+    return id;
   }
 
   unsubscribe(id: string) {
-    pubsub.unsubscribe(id);
+    this.__listenerIds = this.__listenerIds.filter(
+      (listenerId) => id !== listenerId
+    );
+    this.__listeners[id] = null as unknown as (state: State) => any;
   }
 
   getState() {
@@ -52,9 +67,9 @@ class AtomStore<
 }
 
 const createAtomStore = <
-  State extends {},
-  ActionType extends string,
-  Payload extends Partial<State>
+  State extends {} = {},
+  ActionType extends string = string,
+  Payload extends Partial<State> = Partial<State>
 >(
   initState: State,
   reducer: Reducer<State, ActionType, Payload>
@@ -108,5 +123,23 @@ const useAtomStoreSelector = <
   return value;
 };
 
-export { createAtomStore, useAtomStoreSelector, useLazyRef };
+const createUseAtomSelector = <
+  Selected extends unknown,
+  Store extends AtomStore<{}, string, Partial<{}>>,
+  State extends ReturnType<Store["getState"]>
+>(
+  store: Store
+) => {
+  return (
+    selector: (state: State) => Selected,
+    shouldUpdate?: (pv: Selected, cv: Selected) => boolean
+  ) => useAtomStoreSelector(store, selector, shouldUpdate);
+};
+
+export {
+  createAtomStore,
+  useAtomStoreSelector,
+  useLazyRef,
+  createUseAtomSelector,
+};
 export type { Action, Reducer };
