@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.useLazyRef = exports.useAtomStoreSelector = exports.createAtomStore = void 0;
+exports.createUseAtomSelector = exports.useLazyRef = exports.useAtomStoreSelector = exports.createAtomStore = void 0;
 const react_1 = require("react");
 const rfdc_1 = __importDefault(require("rfdc"));
 const nanoid_1 = require("nanoid");
@@ -74,3 +74,7 @@ const useAtomStoreSelector = (store, selector, shouldUpdate) => {
     return value;
 };
 exports.useAtomStoreSelector = useAtomStoreSelector;
+const createUseAtomSelector = (store) => {
+    return (selector, shouldUpdate) => useAtomStoreSelector(store, selector, shouldUpdate);
+};
+exports.createUseAtomSelector = createUseAtomSelector;

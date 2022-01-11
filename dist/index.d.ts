@@ -17,5 +17,6 @@ declare class AtomStore<State extends {}, ActionType extends string, Payload ext
 declare const createAtomStore: <State extends {} = {}, ActionType extends string = string, Payload extends Partial<State> = Partial<State>>(initState: State, reducer: Reducer<State, ActionType, Payload>) => AtomStore<State, ActionType, Payload>;
 declare const useLazyRef: <T>(lazyInit: () => T) => import("react").MutableRefObject<T>;
 declare const useAtomStoreSelector: <Selected extends unknown, Store extends AtomStore<{}, string, Partial<{}>>, State extends ReturnType<Store["getState"]>>(store: Store, selector: (state: State) => Selected, shouldUpdate?: ((pv: Selected, cv: Selected) => boolean) | undefined) => Selected;
-export { createAtomStore, useAtomStoreSelector, useLazyRef };
+declare const createUseAtomSelector: <Selected extends unknown, Store extends AtomStore<{}, string, Partial<{}>>, State extends ReturnType<Store["getState"]>>(store: Store) => (selector: (state: State) => Selected, shouldUpdate?: ((pv: Selected, cv: Selected) => boolean) | undefined) => Selected;
+export { createAtomStore, useAtomStoreSelector, useLazyRef, createUseAtomSelector, };
 export type { Action, Reducer };

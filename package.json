@@ -1,6 +1,6 @@
 {
   "name": "atom-redux",
-  "version": "1.0.17",
+  "version": "1.0.18",
   "description": "atom (mini redux) for react app",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
