@@ -56,18 +56,25 @@ exports.useLazyRef = useLazyRef;
 const shallowShouldUpdate = (pv, cv) => pv !== cv;
 const useAtomStoreSelector = (store, selector, shouldUpdate) => {
     const [value, setValue] = (0, react_1.useState)(() => selector(store.getState()));
-    const preVal = useLazyRef(() => selector(store.getState()));
+    const ref = useLazyRef(() => ({
+        preVal: selector(store.getState()),
+        mounted: false,
+    }));
     (0, react_1.useEffect)(() => {
+        ref.current.mounted = true;
         const __shouldUpdate = shouldUpdate || shallowShouldUpdate;
         const id = store.subscribe(() => {
             const currentVal = selector(store.getState());
-            if (__shouldUpdate(preVal.current, currentVal) === false) {
+            if (__shouldUpdate(ref.current.preVal, currentVal) === false) {
                 return;
             }
-            preVal.current = currentVal;
-            setValue(() => currentVal);
+            ref.current.preVal = currentVal;
+            if (ref.current.mounted) {
+                setValue(() => currentVal);
+            }
         });
         return () => {
+            ref.current.mounted = false;
             store.unsubscribe(id);
         };
     }, []);
