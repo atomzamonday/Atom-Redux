@@ -1,9 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createUseAtomSelector = exports.useAtomStoreSelector = exports.createAtomStore = void 0;
+exports.createUseAtomSelector = exports.useLazyRef = exports.useAtomStoreSelector = exports.createAtomStore = void 0;
 const react_1 = require("react");
-const utility_1 = require("./utility");
 const nanoid_1 = require("nanoid");
+const utility_1 = require("./utility");
+Object.defineProperty(exports, "useLazyRef", { enumerable: true, get: function () { return utility_1.useLazyRef; } });
 class AtomStore {
     constructor(initState, reducer) {
         this.__listenerIds = [];
@@ -41,18 +42,8 @@ exports.createAtomStore = createAtomStore;
 const shallowShouldUpdate = (pv, cv) => pv !== cv;
 const useAtomStoreSelector = (store, selector, shouldUpdate) => {
     const [value, setValue] = (0, react_1.useState)(() => selector(store.getState()));
-<<<<<<< HEAD
-<<<<<<< HEAD
-    const ref = (0, utility_1.useLazyRef)(() => ({
-        preVal: selector(store.getState()),
-        mounted: false,
-    }));
-=======
-    const preVal = useLazyRef(() => selector(store.getState()));
->>>>>>> parent of 044f669 (fix setState on unmounted component issue.)
-=======
-    const preVal = useLazyRef(() => selector(store.getState()));
->>>>>>> parent of 044f669 (fix setState on unmounted component issue.)
+    const mounted = (0, utility_1.useMounted)();
+    const preVal = (0, utility_1.useLazyRef)(() => value);
     (0, react_1.useEffect)(() => {
         const __shouldUpdate = shouldUpdate || shallowShouldUpdate;
         const id = store.subscribe(() => {
@@ -61,7 +52,9 @@ const useAtomStoreSelector = (store, selector, shouldUpdate) => {
                 return;
             }
             preVal.current = currentVal;
-            setValue(() => currentVal);
+            if (mounted.current) {
+                setValue(() => currentVal);
+            }
         });
         return () => {
             store.unsubscribe(id);

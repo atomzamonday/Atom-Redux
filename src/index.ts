@@ -1,56 +1,36 @@
 import { useState, useEffect } from "react";
-import { deepclone, useLazyRef } from "./utility";
 import { nanoid } from "nanoid";
+import { deepclone, useLazyRef, useMounted } from "./utility";
 
-type Dispatch<
-  Payload extends {} | undefined = undefined,
-  Action extends string | undefined = undefined
-> = Action extends undefined
-  ? Payload extends undefined
-    ? undefined
-    : {
-        payload: Payload;
-      }
-  : Payload extends undefined
-  ? {
-      action: Action;
-    }
-  : {
-      action: Action;
-      payload: Payload;
-    };
-
-export type DefaultDispatch<
-  Payload extends {} | undefined,
-  Action extends string | undefined
-> =
-  | Dispatch<Payload, Action>
-  | Dispatch<Payload, undefined>
-  | Dispatch<undefined, Action>
-  | Dispatch;
+type Action<Type extends string, Payload extends {}> = {
+  type: Type;
+  payload: Payload;
+};
 
 type Reducer<
   State extends {},
-  Dispatching extends DefaultDispatch<Partial<State>, string>
-> = (state: State, dispatch: Dispatching) => State;
+  ActionType extends string,
+  Payload extends Partial<State>
+> = (state: State, action: Action<ActionType, Payload>) => State;
 
 class AtomStore<
   State extends {},
-  Dispatching extends DefaultDispatch<Partial<State>, string>
+  ActionType extends string,
+  Payload extends Partial<State>
 > {
   private __state: State;
-  private __reducer: Reducer<State, Dispatching>;
+  private __reducer: Reducer<State, ActionType, Payload>;
   private __listenerIds: string[] = [];
   private __listeners: {
     [id: string]: (state: State) => void;
   } = {};
 
-  constructor(initState: State, reducer: Reducer<State, Dispatching>) {
+  constructor(initState: State, reducer: Reducer<State, ActionType, Payload>) {
     this.__state = initState;
     this.__reducer = reducer;
   }
 
-  dispatch(action: Dispatching) {
+  dispatch(action: Action<ActionType, Payload>) {
     this.__state = this.__reducer(this.__state, action);
     this.__listenerIds.forEach((id) => {
       const listener = this.__listeners[id];
@@ -75,26 +55,27 @@ class AtomStore<
   }
 
   getState() {
-    return Object.freeze(deepclone(this.__state)) as State;
+    return Object.freeze(deepclone(this.__state));
   }
 }
 
 const createAtomStore = <
-  State extends {},
-  Dispatching extends DefaultDispatch<Partial<State>, string>
+  State extends {} = {},
+  ActionType extends string = string,
+  Payload extends Partial<State> = Partial<State>
 >(
   initState: State,
-  reducer: Reducer<State, Dispatching>
-): AtomStore<State, Dispatching> => {
+  reducer: Reducer<State, ActionType, Payload>
+): AtomStore<State, ActionType, Payload> => {
   return new AtomStore(initState, reducer);
 };
 
-const shallowShouldUpdate = <Obj extends unknown>(pv: Obj, cv: Obj) =>
+const shallowShouldUpdate = <State extends unknown>(pv: State, cv: State) =>
   pv !== cv;
 
 const useAtomStoreSelector = <
   Selected extends unknown,
-  Store extends AtomStore<State, DefaultDispatch<Partial<State>, string>>,
+  Store extends AtomStore<{}, string, Partial<{}>>,
   State extends ReturnType<Store["getState"]>
 >(
   store: Store,
@@ -104,9 +85,8 @@ const useAtomStoreSelector = <
   const [value, setValue] = useState(() =>
     selector(store.getState() as unknown as State)
   );
-  const preVal = useLazyRef(() =>
-    selector(store.getState() as unknown as State)
-  );
+  const mounted = useMounted();
+  const preVal = useLazyRef(() => value);
 
   useEffect(() => {
     const __shouldUpdate = shouldUpdate || shallowShouldUpdate;
@@ -116,7 +96,9 @@ const useAtomStoreSelector = <
         return;
       }
       preVal.current = currentVal;
-      setValue(() => currentVal);
+      if (mounted.current) {
+        setValue(() => currentVal);
+      }
     });
 
     return () => {
@@ -128,8 +110,7 @@ const useAtomStoreSelector = <
 };
 
 const createUseAtomSelector = <
-  State extends {},
-  Store extends AtomStore<State, DefaultDispatch<Partial<State>, string>>
+  Store extends AtomStore<{}, string, Partial<{}>>
 >(
   store: Store
 ) => {
@@ -140,25 +121,13 @@ const createUseAtomSelector = <
     selector: (state: State) => Selected,
     shouldUpdate?: (pv: Selected, cv: Selected) => boolean
   ) =>
-    //@ts-ignore
     useAtomStoreSelector<Selected, Store, State>(store, selector, shouldUpdate);
 };
 
-export { createAtomStore, useAtomStoreSelector, createUseAtomSelector };
-export type { Dispatch, Reducer };
-
-const g = <
-  State extends {},
-  Store extends AtomStore<State, DefaultDispatch<Partial<State>, string>>
->(
-  store: Store
-) => {
-  return store.getState();
+export {
+  createAtomStore,
+  useAtomStoreSelector,
+  useLazyRef,
+  createUseAtomSelector,
 };
-
-const s = createAtomStore<
-  { x: string },
-  DefaultDispatch<Partial<{ x: string }>, string>
->({ x: "" }, (state) => state);
-
-const u = g(s);
+export type { Action, Reducer };
