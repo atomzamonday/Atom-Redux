@@ -1,16 +1,9 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createUseAtomSelector = exports.useLazyRef = exports.useAtomStoreSelector = exports.createAtomStore = void 0;
+exports.createUseAtomSelector = exports.useAtomStoreSelector = exports.createAtomStore = void 0;
 const react_1 = require("react");
-const rfdc_1 = __importDefault(require("rfdc"));
+const utility_1 = require("./utility");
 const nanoid_1 = require("nanoid");
-const deepclone = (0, rfdc_1.default)({
-    proto: true,
-    circles: false,
-});
 class AtomStore {
     constructor(initState, reducer) {
         this.__listenerIds = [];
@@ -38,25 +31,17 @@ class AtomStore {
         this.__listeners[id] = null;
     }
     getState() {
-        return Object.freeze(deepclone(this.__state));
+        return Object.freeze((0, utility_1.deepclone)(this.__state));
     }
 }
 const createAtomStore = (initState, reducer) => {
     return new AtomStore(initState, reducer);
 };
 exports.createAtomStore = createAtomStore;
-const useLazyRef = (lazyInit) => {
-    const ref = (0, react_1.useRef)();
-    if (ref.current === undefined) {
-        ref.current = lazyInit();
-    }
-    return ref;
-};
-exports.useLazyRef = useLazyRef;
 const shallowShouldUpdate = (pv, cv) => pv !== cv;
 const useAtomStoreSelector = (store, selector, shouldUpdate) => {
     const [value, setValue] = (0, react_1.useState)(() => selector(store.getState()));
-    const ref = useLazyRef(() => ({
+    const ref = (0, utility_1.useLazyRef)(() => ({
         preVal: selector(store.getState()),
         mounted: false,
     }));
