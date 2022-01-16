@@ -42,10 +42,14 @@ const shallowShouldUpdate = (pv, cv) => pv !== cv;
 const useAtomStoreSelector = (store, selector, shouldUpdate) => {
     const [value, setValue] = (0, react_1.useState)(() => selector(store.getState()));
 <<<<<<< HEAD
+<<<<<<< HEAD
     const ref = (0, utility_1.useLazyRef)(() => ({
         preVal: selector(store.getState()),
         mounted: false,
     }));
+=======
+    const preVal = useLazyRef(() => selector(store.getState()));
+>>>>>>> parent of 044f669 (fix setState on unmounted component issue.)
 =======
     const preVal = useLazyRef(() => selector(store.getState()));
 >>>>>>> parent of 044f669 (fix setState on unmounted component issue.)
