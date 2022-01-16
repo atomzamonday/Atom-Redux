@@ -41,25 +41,25 @@ exports.createAtomStore = createAtomStore;
 const shallowShouldUpdate = (pv, cv) => pv !== cv;
 const useAtomStoreSelector = (store, selector, shouldUpdate) => {
     const [value, setValue] = (0, react_1.useState)(() => selector(store.getState()));
-<<<<<<< HEAD
     const ref = (0, utility_1.useLazyRef)(() => ({
         preVal: selector(store.getState()),
         mounted: false,
     }));
-=======
-    const preVal = useLazyRef(() => selector(store.getState()));
->>>>>>> parent of 044f669 (fix setState on unmounted component issue.)
     (0, react_1.useEffect)(() => {
+        ref.current.mounted = true;
         const __shouldUpdate = shouldUpdate || shallowShouldUpdate;
         const id = store.subscribe(() => {
             const currentVal = selector(store.getState());
-            if (__shouldUpdate(preVal.current, currentVal) === false) {
+            if (__shouldUpdate(ref.current.preVal, currentVal) === false) {
                 return;
             }
-            preVal.current = currentVal;
-            setValue(() => currentVal);
+            ref.current.preVal = currentVal;
+            if (ref.current.mounted) {
+                setValue(() => currentVal);
+            }
         });
         return () => {
+            ref.current.mounted = false;
             store.unsubscribe(id);
         };
     }, []);
