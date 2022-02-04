@@ -1,28 +1,20 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.useMounted = exports.useLazyRef = exports.deepclone = void 0;
-const react_1 = require("react");
-const rfdc_1 = __importDefault(require("rfdc"));
-const deepclone = (0, rfdc_1.default)({
+import { useEffect, useRef } from "react";
+import Deepclone from "rfdc";
+const deepclone = Deepclone({
     proto: true,
     circles: false,
 });
-exports.deepclone = deepclone;
 const useLazyRef = (lazyInit) => {
-    const ref = (0, react_1.useRef)();
+    const ref = useRef();
     if (ref.current === undefined) {
         ref.current = lazyInit();
     }
     return ref;
 };
-exports.useLazyRef = useLazyRef;
 const createMounted = () => false;
 const useMounted = () => {
     const mounted = useLazyRef(createMounted);
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         mounted.current = true;
         return () => {
             mounted.current = false;
@@ -30,4 +22,4 @@ const useMounted = () => {
     }, []);
     return mounted;
 };
-exports.useMounted = useMounted;
+export { deepclone, useLazyRef, useMounted };

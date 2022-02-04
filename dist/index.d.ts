@@ -1,22 +1,25 @@
 import { useLazyRef } from "./utility";
-declare type Action<Type extends string, Payload extends {}> = {
+declare type DispatchAction<Type extends string, Payload extends unknown = undefined> = Payload extends undefined ? {
+    type: Type;
+} : {
     type: Type;
     payload: Payload;
 };
-declare type Reducer<State extends {}, ActionType extends string, Payload extends Partial<State>> = (state: State, action: Action<ActionType, Payload>) => State;
-declare class AtomStore<State extends {}, ActionType extends string, Payload extends Partial<State>> {
+declare type DefaultDispatchAction = DispatchAction<string, unknown> | DispatchAction<string, undefined>;
+declare type Reducer<State extends {}, Action extends DefaultDispatchAction> = (state: State, action: Action) => State | Promise<State>;
+declare class AtomStore<State extends {}, Action extends DefaultDispatchAction> {
     private __state;
     private __reducer;
     private __listenerIds;
     private __listeners;
-    constructor(initState: State, reducer: Reducer<State, ActionType, Payload>);
-    dispatch(action: Action<ActionType, Payload>): void;
+    constructor(initState: () => State, reducer: Reducer<State, Action>);
+    dispatch(action: Action): Promise<void>;
     subscribe(lisenerCallback: (state: State) => any): string;
     unsubscribe(id: string): void;
     getState(): Readonly<State>;
 }
-declare const createAtomStore: <State extends {} = {}, ActionType extends string = string, Payload extends Partial<State> = Partial<State>>(initState: State, reducer: Reducer<State, ActionType, Payload>) => AtomStore<State, ActionType, Payload>;
-declare const useAtomStoreSelector: <Selected extends unknown, Store extends AtomStore<{}, string, Partial<{}>>, State extends ReturnType<Store["getState"]>>(store: Store, selector: (state: State) => Selected, shouldUpdate?: ((pv: Selected, cv: Selected) => boolean) | undefined) => Selected;
-declare const createUseAtomSelector: <Store extends AtomStore<{}, string, Partial<{}>>>(store: Store) => <Selected extends unknown, State extends ReturnType<Store["getState"]>>(selector: (state: State) => Selected, shouldUpdate?: ((pv: Selected, cv: Selected) => boolean) | undefined) => Selected;
+declare const createAtomStore: <State extends {}, Action extends DefaultDispatchAction>(initState: () => State, reducer: Reducer<State, Action>) => AtomStore<State, Action>;
+declare const useAtomStoreSelector: <Action extends DefaultDispatchAction, Store extends AtomStore<State, Action>, State extends ReturnType<Store["getState"]>, Selected extends unknown = unknown>(store: Store, selector: (state: State) => Selected, shouldUpdate?: ((pv: Selected, cv: Selected) => boolean) | undefined) => Selected;
+declare const createUseAtomSelector: <Action extends DefaultDispatchAction, Store extends AtomStore<{}, Action>>(store: Store) => <Selected extends unknown, State extends ReturnType<Store["getState"]>>(selector: (state: State) => Selected, shouldUpdate?: ((pv: Selected, cv: Selected) => boolean) | undefined) => Selected;
 export { createAtomStore, useAtomStoreSelector, useLazyRef, createUseAtomSelector, };
-export type { Action, Reducer };
+export type { DispatchAction, Reducer };

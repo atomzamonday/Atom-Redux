@@ -1,4 +1,3 @@
-import { __awaiter } from "tslib";
 import { useState, useEffect } from "react";
 import { nanoid } from "nanoid";
 import { deepclone, useLazyRef, useMounted } from "./utility";
@@ -6,18 +5,16 @@ class AtomStore {
     constructor(initState, reducer) {
         this.__listenerIds = [];
         this.__listeners = {};
-        this.__state = deepclone(initState());
+        this.__state = initState;
         this.__reducer = reducer;
     }
     dispatch(action) {
-        return __awaiter(this, void 0, void 0, function* () {
-            this.__state = yield this.__reducer(this.__state, action);
-            this.__listenerIds.forEach((id) => {
-                const listener = this.__listeners[id];
-                if (typeof listener === "function") {
-                    listener(this.getState());
-                }
-            });
+        this.__state = this.__reducer(this.__state, action);
+        this.__listenerIds.forEach((id) => {
+            const listener = this.__listeners[id];
+            if (listener !== undefined) {
+                listener(this.getState());
+            }
         });
     }
     subscribe(lisenerCallback) {
@@ -28,7 +25,7 @@ class AtomStore {
     }
     unsubscribe(id) {
         this.__listenerIds = this.__listenerIds.filter((listenerId) => id !== listenerId);
-        delete this.__listeners[id];
+        this.__listeners[id] = null;
     }
     getState() {
         return Object.freeze(deepclone(this.__state));

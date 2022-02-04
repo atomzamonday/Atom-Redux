@@ -2,39 +2,45 @@ import { useState, useEffect } from "react";
 import { nanoid } from "nanoid";
 import { deepclone, useLazyRef, useMounted } from "./utility";
 
-type Action<Type extends string, Payload extends {}> = {
-  type: Type;
-  payload: Payload;
-};
+type DispatchAction<
+  Type extends string,
+  Payload extends unknown = undefined
+> = Payload extends undefined
+  ? {
+      type: Type;
+    }
+  : {
+      type: Type;
+      payload: Payload;
+    };
 
-type Reducer<
-  State extends {},
-  ActionType extends string,
-  Payload extends Partial<State>
-> = (state: State, action: Action<ActionType, Payload>) => State;
+type DefaultDispatchAction =
+  | DispatchAction<string, unknown>
+  | DispatchAction<string, undefined>;
 
-class AtomStore<
-  State extends {},
-  ActionType extends string,
-  Payload extends Partial<State>
-> {
+type Reducer<State extends {}, Action extends DefaultDispatchAction> = (
+  state: State,
+  action: Action
+) => State | Promise<State>;
+
+class AtomStore<State extends {}, Action extends DefaultDispatchAction> {
   private __state: State;
-  private __reducer: Reducer<State, ActionType, Payload>;
+  private __reducer: Reducer<State, Action>;
   private __listenerIds: string[] = [];
   private __listeners: {
     [id: string]: (state: State) => void;
   } = {};
 
-  constructor(initState: State, reducer: Reducer<State, ActionType, Payload>) {
-    this.__state = initState;
+  constructor(initState: () => State, reducer: Reducer<State, Action>) {
+    this.__state = deepclone(initState());
     this.__reducer = reducer;
   }
 
-  dispatch(action: Action<ActionType, Payload>) {
-    this.__state = this.__reducer(this.__state, action);
+  async dispatch(action: Action) {
+    this.__state = await this.__reducer(this.__state, action);
     this.__listenerIds.forEach((id) => {
       const listener = this.__listeners[id];
-      if (listener !== undefined) {
+      if (typeof listener === "function") {
         listener(this.getState());
       }
     });
@@ -51,7 +57,7 @@ class AtomStore<
     this.__listenerIds = this.__listenerIds.filter(
       (listenerId) => id !== listenerId
     );
-    this.__listeners[id] = null as unknown as (state: State) => any;
+    delete this.__listeners[id];
   }
 
   getState() {
@@ -60,13 +66,12 @@ class AtomStore<
 }
 
 const createAtomStore = <
-  State extends {} = {},
-  ActionType extends string = string,
-  Payload extends Partial<State> = Partial<State>
+  State extends {},
+  Action extends DefaultDispatchAction
 >(
-  initState: State,
-  reducer: Reducer<State, ActionType, Payload>
-): AtomStore<State, ActionType, Payload> => {
+  initState: () => State,
+  reducer: Reducer<State, Action>
+): AtomStore<State, Action> => {
   return new AtomStore(initState, reducer);
 };
 
@@ -74,9 +79,10 @@ const shallowShouldUpdate = <State extends unknown>(pv: State, cv: State) =>
   pv !== cv;
 
 const useAtomStoreSelector = <
-  Selected extends unknown,
-  Store extends AtomStore<{}, string, Partial<{}>>,
-  State extends ReturnType<Store["getState"]>
+  Action extends DefaultDispatchAction,
+  Store extends AtomStore<State, Action>,
+  State extends ReturnType<Store["getState"]>,
+  Selected extends unknown = unknown
 >(
   store: Store,
   selector: (state: State) => Selected,
@@ -110,7 +116,8 @@ const useAtomStoreSelector = <
 };
 
 const createUseAtomSelector = <
-  Store extends AtomStore<{}, string, Partial<{}>>
+  Action extends DefaultDispatchAction,
+  Store extends AtomStore<{}, Action>
 >(
   store: Store
 ) => {
@@ -121,7 +128,12 @@ const createUseAtomSelector = <
     selector: (state: State) => Selected,
     shouldUpdate?: (pv: Selected, cv: Selected) => boolean
   ) =>
-    useAtomStoreSelector<Selected, Store, State>(store, selector, shouldUpdate);
+    //@ts-ignore
+    useAtomStoreSelector<Action, Store, State, Selected>(
+      store,
+      selector,
+      shouldUpdate
+    );
 };
 
 export {
@@ -130,4 +142,51 @@ export {
   useLazyRef,
   createUseAtomSelector,
 };
-export type { Action, Reducer };
+export type { DispatchAction, Reducer };
+
+// type D = {
+//   username: string;
+//   password: string;
+//   y: { x: number };
+// };
+
+// const d: D = {
+//   username: "",
+//   password: "",
+//   y: { x: 0 },
+// };
+
+// type DA =
+//   | DispatchAction<"reset", undefined>
+//   | DispatchAction<"set-username", string>
+//   | DispatchAction<"set-password", string>;
+
+// const s = createAtomStore<D, DA>(
+//   () => d,
+//   (state, r) => {
+//     const { type } = r;
+//     if (type === "set-password") {
+//       const { payload: password } = r;
+//       return {
+//         ...state,
+//         password,
+//       };
+//     }
+//     if (type === "set-username") {
+//       const { payload: password } = r;
+//       return {
+//         ...state,
+//         password,
+//       };
+//     }
+//     if (type === "reset") {
+//       return deepclone(d);
+//     }
+//     return state;
+//   }
+// );
+
+// const _su = useAtomStoreSelector<DA, typeof s, D, D["y"]["x"]>(
+//   s,
+//   (state) => state.y.x
+// );
