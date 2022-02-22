@@ -1,3 +1,5 @@
+dist-target: es2017
+
 ```tsx
 import { AtomStore, useAtomStoreSelector } from "atom-redux";
 

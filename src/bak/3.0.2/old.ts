@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { nanoid } from "nanoid";
-import { deepclone, useLazyRef, useMounted } from "./utility";
+import { deepclone, useLazyRef, useMounted } from "../../utility";
 
 type Action<Type extends string, Payload extends {}> = {
   type: Type;

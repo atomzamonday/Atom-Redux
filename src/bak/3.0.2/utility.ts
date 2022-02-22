@@ -1,4 +1,4 @@
-import { useEffect, useRef, MutableRefObject } from "react";
+import { useEffect, useRef } from "react";
 import Deepclone from "rfdc";
 
 const deepclone = Deepclone({
@@ -11,7 +11,7 @@ const useLazyRef = <T>(lazyInit: () => T) => {
   if (ref.current === undefined) {
     ref.current = lazyInit();
   }
-  return ref as MutableRefObject<T>;
+  return ref as React.MutableRefObject<T>;
 };
 
 const createMounted = () => false;
