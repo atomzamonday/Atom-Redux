@@ -1,8 +1,8 @@
 "use strict";
+var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createUseSelector = exports.useStoreSelector = exports.createStore = void 0;
+exports.REACT = exports.prepareReact = exports.createUseSelector = exports.useStoreSelector = exports.createStore = void 0;
 const nanoid_1 = require("nanoid");
-const react_1 = require("react");
 const utility_1 = require("./utility");
 class Runner {
     constructor() {
@@ -69,10 +69,14 @@ const createStore = (initialiseState, reducer) => {
 exports.createStore = createStore;
 const shallowCompare = (a, b) => a !== b;
 const useStoreSelector = (store, selector, shouldUpdate) => {
+    const { useState, useEffect, useDebugValue } = exports.REACT;
+    if (useState === null || useEffect === null || useDebugValue === null) {
+        throw new Error("Please prepare react before use");
+    }
     const isMounted = (0, utility_1.useMounted)();
-    const [val, setVal] = (0, react_1.useState)(() => selector(store.getState()));
+    const [val, setVal] = useState(() => selector(store.getState()));
     const current = (0, utility_1.useLazyRef)(() => val);
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         const shouldUpdate_ = shouldUpdate || shallowCompare;
         const id = store.subscribe((state) => {
             const newVal = selector(state);
@@ -83,7 +87,7 @@ const useStoreSelector = (store, selector, shouldUpdate) => {
         });
         return () => store.unsubscribe(id);
     }, []);
-    (0, react_1.useDebugValue)(val);
+    useDebugValue(val);
     return val;
 };
 exports.useStoreSelector = useStoreSelector;
@@ -91,3 +95,25 @@ const createUseSelector = (store) => {
     return (selector, shouldUpdate) => (0, exports.useStoreSelector)(store, selector, shouldUpdate);
 };
 exports.createUseSelector = createUseSelector;
+const createPrepareReact = () => {
+    const REACT = {
+        useState: null,
+        useDebugValue: null,
+        useEffect: null,
+        useRef: null,
+    };
+    return {
+        prepareReact(react) {
+            const { useState, useDebugValue, useEffect, useRef } = react;
+            REACT.useState = useState.bind(react);
+            REACT.useDebugValue = useDebugValue.bind(react);
+            REACT.useEffect = useEffect.bind(react);
+            REACT.useRef = useRef.bind(react);
+            Object.freeze(REACT);
+        },
+        get REACT() {
+            return REACT;
+        },
+    };
+};
+_a = createPrepareReact(), exports.prepareReact = _a.prepareReact, exports.REACT = _a.REACT;

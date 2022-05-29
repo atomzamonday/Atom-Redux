@@ -1,10 +1,14 @@
-import { useEffect, useRef } from "react";
+import { REACT } from ".";
 import Deepclone from "rfdc";
 const deepclone = Deepclone({
     proto: true,
     circles: false,
 });
 const useLazyRef = (lazyInit) => {
+    const { useEffect, useRef } = REACT;
+    if (useEffect === null || useRef === null) {
+        throw new Error("Please prepare react before use");
+    }
     const ref = useRef();
     if (ref.current === undefined) {
         ref.current = lazyInit();
@@ -13,6 +17,10 @@ const useLazyRef = (lazyInit) => {
 };
 const createMounted = () => false;
 const useMounted = () => {
+    const { useEffect, useRef } = REACT;
+    if (useEffect === null || useRef === null) {
+        throw new Error("Please prepare react before use");
+    }
     const mounted = useLazyRef(createMounted);
     useEffect(() => {
         mounted.current = true;

@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { useEffect, useState, useDebugValue } from "react";
+import { NonNullableObject, React } from "./type";
 import { deepclone, useMounted, useLazyRef } from "./utility";
 
 export namespace Atom {
@@ -110,6 +110,12 @@ export const useStoreSelector = <State, Select, Action>(
   selector: Selector<State, Select>,
   shouldUpdate?: ShouldUpdate<Select>
 ) => {
+  const { useState, useEffect, useDebugValue } = REACT;
+
+  if (useState === null || useEffect === null || useDebugValue === null) {
+    throw new Error("Please prepare react before use");
+  }
+
   const isMounted = useMounted();
   const [val, setVal] = useState(() => selector(store.getState()));
   const current = useLazyRef(() => val);
@@ -179,6 +185,30 @@ export const createUseSelector = <State, Action>(store: Store<State, Action>) =>
 
 // const store = createStore<Data, DataAction>(i, reducer);
 
-// const v = useStoreSelector(store, (state) => state.username);
-
 // const use = createUseSelector(store);
+const createPrepareReact = () => {
+  const REACT: React = {
+    useState: null,
+    useDebugValue: null,
+    useEffect: null,
+    useRef: null,
+  };
+
+  return {
+    prepareReact(react: NonNullableObject<React>) {
+      const { useState, useDebugValue, useEffect, useRef } = react;
+
+      REACT.useState = useState.bind(react);
+      REACT.useDebugValue = useDebugValue.bind(react);
+      REACT.useEffect = useEffect.bind(react);
+      REACT.useRef = useRef.bind(react);
+
+      Object.freeze(REACT);
+    },
+    get REACT() {
+      return REACT;
+    },
+  };
+};
+
+export const { prepareReact, REACT } = createPrepareReact();

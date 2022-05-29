@@ -1,4 +1,5 @@
-import { useEffect, useRef, MutableRefObject } from "react";
+import type { MutableRefObject } from "react";
+import { REACT } from ".";
 import Deepclone from "rfdc";
 
 const deepclone = Deepclone({
@@ -7,6 +8,12 @@ const deepclone = Deepclone({
 });
 
 const useLazyRef = <T>(lazyInit: () => T) => {
+  const { useEffect, useRef } = REACT;
+
+  if (useEffect === null || useRef === null) {
+    throw new Error("Please prepare react before use");
+  }
+
   const ref = useRef<T>();
   if (ref.current === undefined) {
     ref.current = lazyInit();
@@ -17,6 +24,12 @@ const useLazyRef = <T>(lazyInit: () => T) => {
 const createMounted = () => false;
 
 const useMounted = () => {
+  const { useEffect, useRef } = REACT;
+
+  if (useEffect === null || useRef === null) {
+    throw new Error("Please prepare react before use");
+  }
+
   const mounted = useLazyRef(createMounted);
 
   useEffect(() => {

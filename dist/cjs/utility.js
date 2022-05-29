@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.useMounted = exports.useLazyRef = exports.deepclone = void 0;
 const tslib_1 = require("tslib");
-const react_1 = require("react");
+const _1 = require(".");
 const rfdc_1 = (0, tslib_1.__importDefault)(require("rfdc"));
 const deepclone = (0, rfdc_1.default)({
     proto: true,
@@ -10,7 +10,11 @@ const deepclone = (0, rfdc_1.default)({
 });
 exports.deepclone = deepclone;
 const useLazyRef = (lazyInit) => {
-    const ref = (0, react_1.useRef)();
+    const { useEffect, useRef } = _1.REACT;
+    if (useEffect === null || useRef === null) {
+        throw new Error("Please prepare react before use");
+    }
+    const ref = useRef();
     if (ref.current === undefined) {
         ref.current = lazyInit();
     }
@@ -19,8 +23,12 @@ const useLazyRef = (lazyInit) => {
 exports.useLazyRef = useLazyRef;
 const createMounted = () => false;
 const useMounted = () => {
+    const { useEffect, useRef } = _1.REACT;
+    if (useEffect === null || useRef === null) {
+        throw new Error("Please prepare react before use");
+    }
     const mounted = useLazyRef(createMounted);
-    (0, react_1.useEffect)(() => {
+    useEffect(() => {
         mounted.current = true;
         return () => {
             mounted.current = false;

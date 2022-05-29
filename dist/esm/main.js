@@ -1,5 +1,4 @@
 import { nanoid } from "nanoid";
-import { useEffect, useState, useDebugValue } from "react";
 import { deepclone, useMounted, useLazyRef } from "./utility";
 class Runner {
     constructor() {
@@ -65,6 +64,10 @@ export const createStore = (initialiseState, reducer) => {
 };
 const shallowCompare = (a, b) => a !== b;
 export const useStoreSelector = (store, selector, shouldUpdate) => {
+    const { useState, useEffect, useDebugValue } = REACT;
+    if (useState === null || useEffect === null || useDebugValue === null) {
+        throw new Error("Please prepare react before use");
+    }
     const isMounted = useMounted();
     const [val, setVal] = useState(() => selector(store.getState()));
     const current = useLazyRef(() => val);
@@ -85,3 +88,25 @@ export const useStoreSelector = (store, selector, shouldUpdate) => {
 export const createUseSelector = (store) => {
     return (selector, shouldUpdate) => useStoreSelector(store, selector, shouldUpdate);
 };
+const createPrepareReact = () => {
+    const REACT = {
+        useState: null,
+        useDebugValue: null,
+        useEffect: null,
+        useRef: null,
+    };
+    return {
+        prepareReact(react) {
+            const { useState, useDebugValue, useEffect, useRef } = react;
+            REACT.useState = useState.bind(react);
+            REACT.useDebugValue = useDebugValue.bind(react);
+            REACT.useEffect = useEffect.bind(react);
+            REACT.useRef = useRef.bind(react);
+            Object.freeze(REACT);
+        },
+        get REACT() {
+            return REACT;
+        },
+    };
+};
+export const { prepareReact, REACT } = createPrepareReact();
