@@ -5,3 +5,4 @@ tsconfig.json
 .pnp.loader.mjs
 .vscode
 ./src
+./test

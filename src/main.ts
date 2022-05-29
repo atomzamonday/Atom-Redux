@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useDebugValue } from "react";
 import { deepclone, useMounted, useLazyRef } from "./utility";
 
 export namespace Atom {
@@ -21,19 +21,46 @@ export type Selector<State, Select> = (state: State) => Select;
 
 export type ShouldUpdate<Select> = (previous: Select, current: Select) => boolean;
 
+type RunnerFunction = () => Promise<void>;
+
+class Runner {
+  private runners: RunnerFunction[] = [];
+  private running: boolean = false;
+  private promise: Promise<void> = Promise.resolve();
+
+  private async run() {
+    this.running = true;
+    while (this.runners.length > 0) {
+      await (this.runners[0] as RunnerFunction)();
+      this.runners.shift();
+    }
+    this.running = false;
+  }
+
+  push(runner: RunnerFunction) {
+    this.runners.push(runner);
+    if (this.running === false) {
+      this.promise = this.run();
+    }
+    return this.promise;
+  }
+}
+
 class Store<State, Action> {
   private state;
   private reducer: Atom.Reducer<State, Action>;
   private subscribers: {
     [id: string]: Atom.Subscriber<State>;
   } = {};
+  private runner: Runner;
 
   constructor(initialiseState: () => State, reducer: Atom.Reducer<State, Action>) {
+    this.runner = new Runner();
     this.state = initialiseState();
     this.reducer = reducer;
   }
 
-  async dispatch(action: Action) {
+  private async _dispatch(action: Action) {
     this.state = deepclone(await this.reducer(this.state, action));
     const ids = Object.keys(this.subscribers);
     ids.forEach((id) => {
@@ -46,6 +73,10 @@ class Store<State, Action> {
         });
       }
     });
+  }
+
+  dispatch(action: Action) {
+    return this.runner.push(this._dispatch.bind(this, action));
   }
 
   getState() {
@@ -95,6 +126,8 @@ export const useStoreSelector = <State, Select, Action>(
 
     return () => store.unsubscribe(id);
   }, []);
+
+  useDebugValue(val);
 
   return val;
 };

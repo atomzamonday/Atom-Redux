@@ -13,7 +13,9 @@ declare class Store<State, Action> {
     private state;
     private reducer;
     private subscribers;
+    private runner;
     constructor(initialiseState: () => State, reducer: Atom.Reducer<State, Action>);
+    private _dispatch;
     dispatch(action: Action): Promise<void>;
     getState(): State;
     subscribe(subscriber: Atom.Subscriber<State>): string;

@@ -1,13 +1,36 @@
 import { nanoid } from "nanoid";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useDebugValue } from "react";
 import { deepclone, useMounted, useLazyRef } from "./utility";
+class Runner {
+    constructor() {
+        this.runners = [];
+        this.running = false;
+        this.promise = Promise.resolve();
+    }
+    async run() {
+        this.running = true;
+        while (this.runners.length > 0) {
+            await this.runners[0]();
+            this.runners.shift();
+        }
+        this.running = false;
+    }
+    push(runner) {
+        this.runners.push(runner);
+        if (this.running === false) {
+            this.promise = this.run();
+        }
+        return this.promise;
+    }
+}
 class Store {
     constructor(initialiseState, reducer) {
         this.subscribers = {};
+        this.runner = new Runner();
         this.state = initialiseState();
         this.reducer = reducer;
     }
-    async dispatch(action) {
+    async _dispatch(action) {
         this.state = deepclone(await this.reducer(this.state, action));
         const ids = Object.keys(this.subscribers);
         ids.forEach((id) => {
@@ -19,6 +42,9 @@ class Store {
                 });
             }
         });
+    }
+    dispatch(action) {
+        return this.runner.push(this._dispatch.bind(this, action));
     }
     getState() {
         return deepclone(this.state);
@@ -53,6 +79,7 @@ export const useStoreSelector = (store, selector, shouldUpdate) => {
         });
         return () => store.unsubscribe(id);
     }, []);
+    useDebugValue(val);
     return val;
 };
 export const createUseSelector = (store) => {
